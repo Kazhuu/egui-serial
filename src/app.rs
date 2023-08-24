@@ -5,7 +5,12 @@ pub struct TemplateApp {
     // Example stuff:
     label: String,
 
-    // this how you opt-out of serialization of a member
+    #[serde(skip)]
+    selected: usize,
+    #[serde(skip)]
+    selected_port: String,
+    #[serde(skip)]
+    serial_ports: Vec<String>,
     #[serde(skip)]
     value: f32,
 }
@@ -15,6 +20,9 @@ impl Default for TemplateApp {
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
+            selected: 0,
+            selected_port: "".to_string(),
+            serial_ports: vec![],
             value: 2.7,
         }
     }
@@ -45,8 +53,6 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
-
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
         // Tip: a good default choice is to just keep the `CentralPanel`.
@@ -69,12 +75,12 @@ impl eframe::App for TemplateApp {
 
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
-                ui.text_edit_singleline(label);
+                ui.text_edit_singleline(&mut self.label);
             });
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
+            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
             if ui.button("Increment").clicked() {
-                *value += 1.0;
+                self.value += 1.0;
             }
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
@@ -102,9 +108,32 @@ impl eframe::App for TemplateApp {
                 "Source code."
             ));
             egui::warn_if_debug_build(ui);
+            egui::ComboBox::from_label("Select one!")
+                .selected_text(self.selected_port.clone())
+                .show_ui(ui, |ui| {
+                    for i in 0..self.serial_ports.len() {
+                        let value = ui.selectable_value(
+                            &mut self.selected_port,
+                            self.serial_ports[self.selected].clone(),
+                            &self.serial_ports[i],
+                        );
+                        if value.clicked() {
+                            self.selected = i;
+                        }
+                    }
+                });
+            if ui.button("Add ports").clicked() {
+                self.serial_ports.push("first".to_string());
+                self.serial_ports.push("second".to_string());
+            }
+            if ui.button("Remove ports").clicked() {
+                self.serial_ports.clear();
+                self.selected_port = "".to_string();
+                self.selected = 0;
+            }
         });
 
-        if true {
+        if false {
             egui::Window::new("Window").show(ctx, |ui| {
                 ui.label("Windows can be moved by dragging them.");
                 ui.label("They are automatically sized based on contents.");
